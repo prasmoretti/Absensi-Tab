@@ -1,0 +1,2375 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Absensi Tap</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- Library QR Code dan Scanner Kamera -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+<style>
+:root{
+  --bg:#F4F8FF;
+  --surface:#FFFFFF;
+  --ink:#12345B;
+  --ink-soft:#5D7592;
+  --line:#D7E5F5;
+  --primary:#1976D2;
+  --primary-dark:#0D47A1;
+  --primary-soft:#E3F2FD;
+  --present:#1976D2;
+  --present-soft:#E3F2FD;
+  --late:#1565C0;
+  --late-soft:#E1F0FF;
+  --absent:#D32F2F;
+  --absent-soft:#FFEBEE;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'IBM Plex Sans',sans-serif;
+}
+
+body{
+  background:var(--bg);
+  color:var(--ink);
+  min-height:100vh;
+}
+
+.app{
+  max-width:1100px;
+  margin:auto;
+  padding:28px 20px 60px;
+}
+
+/* HEADER */
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:white;
+  padding:18px 20px;
+  border-radius:16px;
+  border:1px solid var(--line);
+  margin-bottom:24px;
+  box-shadow:0 4px 15px rgba(25,118,210,.18);
+}
+
+.profile{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.profile-img{
+  width:68px;
+  height:68px;
+  object-fit:cover;
+  border-radius:50%;
+  border:3px solid var(--primary);
+}
+
+.title-block h1{
+  font-size:28px;
+  color:var(--primary-dark);
+  margin-bottom:4px;
+}
+
+.title-block input{
+  border:1px solid var(--line);
+  outline:none;
+  background:transparent;
+  color:var(--ink-soft);
+  font-size:14px;
+  padding:5px 8px;
+  border-radius:6px;
+}
+
+.clock{
+  text-align:right;
+}
+
+.clock .time{
+  font-size:26px;
+  font-weight:600;
+  color:var(--primary-dark);
+}
+
+.clock .date{
+  font-size:13px;
+  color:var(--ink-soft);
+}
+
+/* GRID */
+.grid{
+  display:grid;
+  grid-template-columns:1.1fr 1.4fr;
+  gap:20px;
+}
+
+.card{
+  background:white;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:20px;
+  box-shadow:0 4px 15px rgba(25,118,210,.14);
+}
+
+/* SCAN */
+.scan-zone{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.scan-zone h2,
+.list-header h2{
+  font-size:15px;
+  color:var(--ink-soft);
+}
+
+.scan-input{
+  width:100%;
+  padding:16px 14px;
+  font-size:18px;
+  border:1.5px solid var(--line);
+  border-radius:10px;
+  outline:none;
+  color:var(--ink);
+  font-family:'IBM Plex Mono',monospace;
+}
+
+.scan-input:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px var(--primary-soft);
+}
+
+.hint{
+  font-size:12.5px;
+  color:var(--ink-soft);
+  line-height:1.5;
+}
+
+.button-row{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.btn{
+  background:var(--primary);
+  color:white;
+  border:none;
+  padding:9px 14px;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:13px;
+}
+
+.btn:hover{
+  background:var(--primary-dark);
+}
+
+.btn.ghost,
+.roster-toggle{
+  background:white;
+  color:var(--ink-soft);
+  border:1px solid var(--line);
+}
+
+.btn.ghost:hover,
+.roster-toggle:hover{
+  background:var(--primary-soft);
+  color:var(--primary);
+  border-color:var(--primary);
+}
+
+.roster-toggle{
+  border-radius:8px;
+  padding:8px 12px;
+  font-size:13px;
+  cursor:pointer;
+}
+
+/* QR SECTION */
+.qr-section{
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px;
+  background:#FAFCFF;
+}
+
+.qr-section h3{
+  font-size:14px;
+  margin-bottom:8px;
+  color:var(--primary-dark);
+}
+
+.qr-select{
+  width:100%;
+  padding:9px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  color:var(--ink);
+  background:white;
+  margin-bottom:12px;
+}
+
+.qr-display{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+}
+
+#qrcode{
+  background:white;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:8px;
+}
+
+.qr-label{
+  font-family:'IBM Plex Mono',monospace;
+  font-weight:600;
+  color:var(--primary-dark);
+  font-size:12px;
+  text-align:center;
+}
+
+.qr-help{
+  font-size:11px;
+  color:var(--ink-soft);
+  text-align:center;
+}
+
+/* CAMERA */
+.scanner-box{
+  display:none;
+  margin-top:4px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px;
+  background:#FAFCFF;
+}
+
+#reader{
+  width:100%;
+}
+
+#reader video{
+  border-radius:8px;
+  max-width:100%;
+}
+
+.camera-note{
+  font-size:12px;
+  color:var(--ink-soft);
+  margin-top:8px;
+  line-height:1.5;
+}
+
+/* RESULT */
+.result{
+  min-height:190px;
+  border-radius:12px;
+  padding:18px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  background:var(--bg);
+  border:1px dashed var(--line);
+  transition:.25s;
+}
+
+.result.ok{
+  background:var(--present-soft);
+  border:1px solid var(--present);
+}
+
+.result.late{
+  background:var(--late-soft);
+  border:1px solid var(--late);
+}
+
+.result.err{
+  background:var(--absent-soft);
+  border:1px solid var(--absent);
+}
+
+.student-photo{
+  width:68px;
+  height:68px;
+  border-radius:50%;
+  object-fit:cover;
+  border:3px solid var(--primary);
+  flex-shrink:0;
+  background:white;
+}
+
+.avatar{
+  width:55px;
+  height:55px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:white;
+  background:var(--primary);
+  font-size:18px;
+  font-weight:600;
+  flex-shrink:0;
+}
+
+.result-text{
+  flex:1;
+  min-width:0;
+}
+
+.result-text .name{
+  font-size:18px;
+  font-weight:600;
+}
+
+.result-text .sub{
+  font-size:13px;
+  color:var(--ink-soft);
+  margin-top:3px;
+}
+
+.ok-text{
+  color:var(--present)!important;
+}
+
+.late-text{
+  color:var(--late)!important;
+}
+
+.err-text{
+  color:var(--absent)!important;
+}
+
+.student-details{
+  margin-top:11px;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  font-size:12px;
+}
+
+.student-details div{
+  display:flex;
+  gap:8px;
+}
+
+.student-details span{
+  width:55px;
+  color:var(--ink-soft);
+}
+
+.student-details b{
+  color:var(--ink);
+  font-weight:600;
+}
+
+/* MANUAL LIST */
+.manual-list{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
+  gap:8px;
+  margin-top:6px;
+}
+
+.manual-list button{
+  padding:8px;
+  border-radius:8px;
+  border:1px solid var(--line);
+  background:white;
+  cursor:pointer;
+  text-align:left;
+  color:var(--ink);
+}
+
+.manual-list button:hover{
+  background:var(--primary-soft);
+  border-color:var(--primary);
+}
+
+.id-mono{
+  display:block;
+  font-size:11px;
+  color:var(--ink-soft);
+  font-family:'IBM Plex Mono',monospace;
+}
+
+/* TABLE */
+.list-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.actions input{
+  padding:7px 8px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  color:var(--ink);
+}
+
+.table-wrap{
+  width:100%;
+  overflow-x:auto;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+  min-width:450px;
+}
+
+th{
+  text-align:left;
+  color:var(--ink-soft);
+  font-size:11px;
+  padding:8px 6px;
+  border-bottom:1px solid var(--line);
+}
+
+td{
+  padding:9px 6px;
+  border-bottom:1px solid var(--line);
+}
+
+.status-pill{
+  padding:2px 9px;
+  border-radius:20px;
+  font-size:11px;
+}
+
+.status-pill.hadir{
+  background:var(--present-soft);
+  color:var(--present);
+}
+
+.status-pill.telat{
+  background:var(--late-soft);
+  color:var(--late);
+}
+
+.empty-row td{
+  text-align:center;
+  padding:25px;
+  color:var(--ink-soft);
+}
+
+.summary{
+  display:flex;
+  gap:15px;
+  margin-top:14px;
+  color:var(--ink-soft);
+  font-size:12px;
+  flex-wrap:wrap;
+}
+
+.summary b{
+  color:var(--primary-dark);
+}
+
+/* ROSTER */
+.roster-panel{
+  margin-top:18px;
+}
+
+.roster-row{
+  display:grid;
+  grid-template-columns:70px 1fr 90px 110px 32px;
+  gap:8px;
+  margin-bottom:6px;
+  align-items:center;
+}
+
+.roster-row input{
+  padding:7px 8px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  min-width:0;
+}
+
+.roster-row button{
+  border:none;
+  background:none;
+  color:var(--absent);
+  cursor:pointer;
+  font-size:20px;
+}
+
+.roster-labels{
+  display:grid;
+  grid-template-columns:70px 1fr 90px 110px 32px;
+  gap:8px;
+  margin-bottom:8px;
+  font-size:11px;
+  color:var(--ink-soft);
+}
+
+/* QR MODAL */
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  z-index:999;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.modal-content{
+  background:white;
+  border-radius:16px;
+  padding:24px;
+  width:100%;
+  max-width:350px;
+  text-align:center;
+  position:relative;
+}
+
+.modal-content h2{
+  font-size:18px;
+  color:var(--primary-dark);
+  margin-bottom:6px;
+}
+
+.modal-content p{
+  font-size:13px;
+  color:var(--ink-soft);
+  margin-bottom:15px;
+}
+
+.modal-qr{
+  display:flex;
+  justify-content:center;
+  margin:15px 0;
+}
+
+.close-modal{
+  position:absolute;
+  top:10px;
+  right:14px;
+  border:none;
+  background:none;
+  font-size:24px;
+  cursor:pointer;
+  color:var(--ink-soft);
+}
+
+/* RESPONSIVE */
+@media(max-width:820px){
+  .grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:600px){
+  .app{
+    padding:15px 12px 40px;
+  }
+
+  header{
+    align-items:flex-start;
+    gap:10px;
+  }
+
+  .profile-img{
+    width:55px;
+    height:55px;
+  }
+
+  .title-block h1{
+    font-size:22px;
+  }
+
+  .clock .time{
+    font-size:21px;
+  }
+
+  .clock .date{
+    font-size:11px;
+  }
+
+  .result{
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+
+  .card{
+    padding:14px;
+  }
+
+  .roster-row{
+    grid-template-columns:55px 1fr 75px 90px 25px;
+    gap:4px;
+  }
+
+  .roster-row input{
+    font-size:11px;
+    padding:6px 4px;
+  }
+
+  .roster-labels{
+    grid-template-columns:55px 1fr 75px 90px 25px;
+    gap:4px;
+    font-size:9px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+
+    <div class="profile">
+
+      <img
+        src="nusteng.jpeg"
+        class="profile-img"
+        alt="Foto Profil"
+        onerror="this.style.display='none'"
+      >
+
+      <div class="title-block">
+
+        <h1>Absensi Tap</h1>
+
+        <input
+          type="text"
+          value="XI RPL"
+          aria-label="Kelas"
+        >
+
+      </div>
+
+    </div>
+
+    <div class="clock">
+
+      <div class="time" id="clockTime">
+        00:00:00
+      </div>
+
+      <div class="date" id="clockDate">
+        -
+      </div>
+
+    </div>
+
+  </header>
+
+
+  <!-- GRID -->
+  <div class="grid">
+
+    <!-- SCAN CARD -->
+    <div class="card scan-zone">
+
+      <h2>
+        Scan / Tap Kartu Siswa
+      </h2>
+
+      <input
+        id="scanInput"
+        class="scan-input"
+        type="text"
+        placeholder="Masukkan ID kartu..."
+        autocomplete="off"
+      >
+
+      <p class="hint">
+        Masukkan ID siswa lalu tekan Enter, atau gunakan scanner QR kamera HP.
+      </p>
+
+
+      <div class="button-row">
+
+        <button
+          class="btn"
+          id="startScanner"
+        >
+          📷 Scan QR Kamera
+        </button>
+
+        <button
+          class="roster-toggle"
+          id="toggleManual"
+        >
+          Tampilkan Daftar Siswa
+        </button>
+
+      </div>
+
+
+      <!-- CAMERA SCANNER -->
+      <div
+        class="scanner-box"
+        id="scannerBox"
+      >
+
+        <div id="reader"></div>
+
+        <p class="camera-note">
+          Arahkan kamera HP ke QR Code siswa.
+          Setelah berhasil, absensi otomatis dicatat.
+        </p>
+
+        <button
+          class="roster-toggle"
+          id="stopScanner"
+          style="margin-top:10px;"
+        >
+          ✕ Tutup Kamera
+        </button>
+
+      </div>
+
+
+      <!-- QR GENERATOR -->
+      <div class="qr-section">
+
+        <h3>
+          QR Code Siswa
+        </h3>
+
+        <select
+          id="qrStudentSelect"
+          class="qr-select"
+        ></select>
+
+        <div class="qr-display">
+
+          <div id="qrcode"></div>
+
+          <div
+            class="qr-label"
+            id="qrLabel"
+          >
+            -
+          </div>
+
+          <p class="qr-help">
+            QR berisi ID siswa. Tampilkan di layar atau cetak untuk dipindai.
+          </p>
+
+          <button
+            class="btn"
+            id="downloadQr"
+          >
+            ⬇ Download QR
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- HASIL ABSENSI -->
+      <div
+        id="result"
+        class="result"
+      >
+
+        <div class="avatar">
+          ?
+        </div>
+
+        <div class="result-text">
+
+          <div class="name">
+            Silakan Tap Kartu
+          </div>
+
+          <div class="sub">
+            Tempelkan kartu atau scan QR siswa untuk melakukan absensi
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div
+        id="manualList"
+        class="manual-list"
+        style="display:none"
+      ></div>
+
+    </div>
+
+
+    <!-- ATTENDANCE -->
+    <div class="card">
+
+      <div class="list-header">
+
+        <h2>
+          Daftar Kehadiran
+        </h2>
+
+        <div class="actions">
+
+          <input
+            type="date"
+            id="dateFilter"
+          >
+
+          <button
+            class="btn"
+            id="exportCsv"
+          >
+            Export CSV
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Waktu</th>
+              <th>ID</th>
+              <th>Nama</th>
+              <th>Status</th>
+            </tr>
+
+          </thead>
+
+          <tbody id="attendanceBody">
+
+            <tr class="empty-row">
+
+              <td colspan="4">
+                Belum ada siswa yang tap
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+
+      <div
+        id="summaryLine"
+        class="summary"
+      ></div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ROSTER -->
+  <div class="card roster-panel">
+
+    <div class="list-header">
+
+      <h2>
+        Data Siswa
+      </h2>
+
+      <button
+        class="roster-toggle"
+        id="toggleRoster"
+      >
+        Kelola Data Siswa
+      </button>
+
+    </div>
+
+
+    <div
+      id="rosterPanel"
+      style="display:none"
+    >
+
+      <div class="roster-labels">
+        <span>ID</span>
+        <span>Nama</span>
+        <span>Jam Masuk</span>
+        <span>Foto</span>
+        <span></span>
+      </div>
+
+      <div id="rosterRows"></div>
+
+      <button
+        class="btn"
+        id="addRosterRow"
+      >
+        + Tambah Siswa
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- MODAL QR -->
+<div
+  class="modal"
+  id="qrModal"
+>
+  <div class="modal-content">
+
+    <button
+      class="close-modal"
+      id="closeModal"
+    >
+      ×
+    </button>
+
+    <h2 id="modalStudentName">
+      QR Siswa
+    </h2>
+
+    <p>
+      Gunakan QR ini untuk melakukan absensi.
+    </p>
+
+    <div
+      class="modal-qr"
+      id="modalQr"
+    ></div>
+
+    <strong
+      id="modalStudentId"
+      style="font-family:'IBM Plex Mono'; color:#0D47A1;"
+    ></strong>
+
+  </div>
+</div>
+
+
+<script>
+
+/* =========================
+   DATA SISWA
+========================= */
+
+const defaultRoster = [
+
+  {
+    id:'1001',
+    name:'Prasetyo Dwi santoso',
+    photo:'pras.jpeg',
+    in:'06:45',
+    class:'XI RPL',
+    major:'RPL'
+  },
+
+  {
+    id:'1002',
+    name:'Fitra varel aqiela zilqy',
+    photo:'fitra.jpeg',
+    in:'06:45',
+    class:'XI RPL',
+    major:'RPL'
+  },
+
+  {
+    id:'1003',
+    name:'Raina Althoofhani',
+    photo:'raina.jpeg',
+    in:'06:45',
+    class:'XI RPL',
+    major:'RPL'
+  },
+
+  {
+    id:'1004',
+    name:'Tristan pandya nanggala',
+    photo:'tristan.jpeg',
+    in:'06:45',
+    class:'XI RPL',
+    major:'RPL'
+  },
+
+  {
+    id:'1005',
+    name:'Rizky Pratama',
+    photo:'rizky.jpeg',
+    in:'06:45',
+    class:'XI RPL',
+    major:'RPL'
+  }
+
+];
+
+
+let roster = [];
+let attendance = [];
+let currentDate = todayStr();
+
+let html5QrCode = null;
+let scannerRunning = false;
+let lastScannedId = '';
+let lastScanTime = 0;
+
+
+/* =========================
+   STORAGE
+========================= */
+
+function storageGet(key){
+
+  try{
+
+    const saved =
+      localStorage.getItem(key);
+
+    return saved
+      ? JSON.parse(saved)
+      : null;
+
+  }catch(error){
+
+    console.error(
+      'Gagal membaca storage:',
+      error
+    );
+
+    return null;
+
+  }
+
+}
+
+
+function storageSet(key,value){
+
+  try{
+
+    localStorage.setItem(
+      key,
+      JSON.stringify(value)
+    );
+
+  }catch(error){
+
+    console.error(
+      'Gagal menyimpan:',
+      error
+    );
+
+  }
+
+}
+
+
+/* =========================
+   TANGGAL
+========================= */
+
+function todayStr(){
+
+  const d = new Date();
+
+  return [
+
+    d.getFullYear(),
+
+    String(
+      d.getMonth()+1
+    ).padStart(2,'0'),
+
+    String(
+      d.getDate()
+    ).padStart(2,'0')
+
+  ].join('-');
+
+}
+
+
+/* =========================
+   LOAD ROSTER
+========================= */
+
+function loadRoster(){
+
+  const saved =
+    storageGet('absensi_roster');
+
+  if(
+    Array.isArray(saved) &&
+    saved.length
+  ){
+
+    roster = saved;
+
+  }else{
+
+    roster =
+      JSON.parse(
+        JSON.stringify(defaultRoster)
+      );
+
+    saveRoster();
+
+  }
+
+  renderRosterPanel();
+  renderManualList();
+  renderQrSelect();
+
+}
+
+
+function saveRoster(){
+
+  storageSet(
+    'absensi_roster',
+    roster
+  );
+
+}
+
+
+/* =========================
+   ATTENDANCE STORAGE
+========================= */
+
+function loadAttendance(date){
+
+  const saved =
+    storageGet('absensi_' + date);
+
+  attendance =
+    Array.isArray(saved)
+      ? saved
+      : [];
+
+  renderAttendance();
+
+}
+
+
+function saveAttendance(){
+
+  storageSet(
+    'absensi_' + currentDate,
+    attendance
+  );
+
+}
+
+
+/* =========================
+   STATUS
+========================= */
+
+function statusFor(student,time){
+
+  const batas =
+    student.in || '06:45';
+
+  return time <= batas
+    ? 'Hadir'
+    : 'Telat';
+
+}
+
+
+/* =========================
+   RECORD TAP
+========================= */
+
+function recordTap(id){
+
+  id = String(id).trim();
+
+  const student =
+    roster.find(
+      s =>
+        String(s.id) === id
+    );
+
+  const result =
+    document.getElementById('result');
+
+
+  /* ID TIDAK DITEMUKAN */
+
+  if(!student){
+
+    result.className =
+      'result err';
+
+    result.innerHTML = `
+
+      <div class="avatar">
+        !
+      </div>
+
+      <div class="result-text">
+
+        <div class="name err-text">
+          Kartu Tidak Dikenal
+        </div>
+
+        <div class="sub">
+          ID ${escapeHtml(id)} tidak ditemukan dalam data siswa.
+        </div>
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  const now = new Date();
+
+  const time =
+    now.toTimeString().slice(0,5);
+
+
+  /* CEK SUDAH ABSEN */
+
+  const already =
+    attendance.find(
+      a =>
+        String(a.id) === id
+    );
+
+
+  if(already){
+
+    showSuccess(
+      student,
+      already.time,
+      already.status,
+      true
+    );
+
+    return;
+
+  }
+
+
+  const status =
+    statusFor(
+      student,
+      time
+    );
+
+
+  attendance.push({
+
+    id:student.id,
+    name:student.name,
+    time:time,
+    status:status
+
+  });
+
+
+  saveAttendance();
+  renderAttendance();
+
+  showSuccess(
+    student,
+    time,
+    status,
+    false
+  );
+
+}
+
+
+/* =========================
+   HASIL SUKSES
+========================= */
+
+function showSuccess(
+  student,
+  time,
+  status,
+  already
+){
+
+  const result =
+    document.getElementById('result');
+
+  result.className =
+    status === 'Telat'
+      ? 'result late'
+      : 'result ok';
+
+  result.innerHTML = `
+
+    <img
+      class="student-photo"
+      src="${escapeAttribute(student.photo || 'pras.jpeg')}"
+      alt="Foto ${escapeAttribute(student.name)}"
+      onerror="this.src='pras.jpeg'"
+    >
+
+    <div class="result-text">
+
+      <div class="name">
+
+        ${already ? 'Sudah Ditap' : 'Berhasil Ditap'}
+
+      </div>
+
+      <div class="sub ${
+        status === 'Telat'
+          ? 'late-text'
+          : 'ok-text'
+      }">
+
+        ${
+          already
+            ? `Absensi sebelumnya pukul ${time}`
+            : `Absensi berhasil dicatat pukul ${time}`
+        }
+
+      </div>
+
+      <div class="student-details">
+
+        <div>
+          <span>Nama</span>
+          <b>${escapeHtml(student.name)}</b>
+        </div>
+
+        <div>
+          <span>Kelas</span>
+          <b>${escapeHtml(student.class || 'XI RPL')}</b>
+        </div>
+
+        <div>
+          <span>Jurusan</span>
+          <b>${escapeHtml(student.major || 'RPL')}</b>
+        </div>
+
+        <div>
+          <span>Waktu</span>
+          <b>${escapeHtml(time)}</b>
+        </div>
+
+        <div>
+          <span>Status</span>
+          <b>${escapeHtml(status)}</b>
+        </div>
+
+      </div>
+
+    </div>
+
+  `;
+
+}
+
+
+/* =========================
+   RENDER ATTENDANCE
+========================= */
+
+function renderAttendance(){
+
+  const body =
+    document.getElementById('attendanceBody');
+
+  const sorted =
+    [...attendance].sort(
+      (a,b) =>
+        a.time.localeCompare(b.time)
+    );
+
+
+  if(sorted.length === 0){
+
+    body.innerHTML = `
+
+      <tr class="empty-row">
+
+        <td colspan="4">
+          Belum ada siswa yang tap pada tanggal ini
+        </td>
+
+      </tr>
+
+    `;
+
+  }else{
+
+    body.innerHTML =
+      sorted.map(
+        a => `
+
+          <tr>
+
+            <td>${escapeHtml(a.time)}</td>
+
+            <td>${escapeHtml(a.id)}</td>
+
+            <td>${escapeHtml(a.name)}</td>
+
+            <td>
+
+              <span class="status-pill ${
+                a.status === 'Telat'
+                  ? 'telat'
+                  : 'hadir'
+              }">
+
+                ${escapeHtml(a.status)}
+
+              </span>
+
+            </td>
+
+          </tr>
+
+        `
+      ).join('');
+
+  }
+
+
+  const hadir =
+    attendance.filter(
+      a => a.status === 'Hadir'
+    ).length;
+
+  const telat =
+    attendance.filter(
+      a => a.status === 'Telat'
+    ).length;
+
+  const belum =
+    roster.length - attendance.length;
+
+
+  document.getElementById(
+    'summaryLine'
+  ).innerHTML = `
+
+    <span>
+      <b>${hadir}</b> hadir
+    </span>
+
+    <span>
+      <b>${telat}</b> telat
+    </span>
+
+    <span>
+      <b>${Math.max(belum,0)}</b> belum tap
+    </span>
+
+  `;
+
+}
+
+
+/* =========================
+   MANUAL LIST
+========================= */
+
+function renderManualList(){
+
+  const list =
+    document.getElementById('manualList');
+
+  list.innerHTML =
+    roster.map(
+      s => `
+
+        <button data-id="${escapeAttribute(s.id)}">
+
+          ${escapeHtml(s.name)}
+
+          <span class="id-mono">
+            ${escapeHtml(s.id)}
+          </span>
+
+        </button>
+
+      `
+    ).join('');
+
+
+  list
+    .querySelectorAll('button')
+    .forEach(
+      btn => {
+
+        btn.addEventListener(
+          'click',
+          () => {
+
+            recordTap(
+              btn.dataset.id
+            );
+
+          }
+        );
+
+      }
+    );
+
+}
+
+
+/* =========================
+   QR SELECT
+========================= */
+
+function renderQrSelect(){
+
+  const select =
+    document.getElementById('qrStudentSelect');
+
+  select.innerHTML =
+    roster.map(
+      s => `
+
+        <option value="${escapeAttribute(s.id)}">
+
+          ${escapeHtml(s.name)} (${escapeHtml(s.id)})
+
+        </option>
+
+      `
+    ).join('');
+
+  if(roster.length){
+
+    generateQr(
+      roster[0].id
+    );
+
+  }
+
+}
+
+
+/* =========================
+   GENERATE QR
+========================= */
+
+function generateQr(id){
+
+  const student =
+    roster.find(
+      s =>
+        String(s.id) === String(id)
+    );
+
+  if(!student) return;
+
+  const qrBox =
+    document.getElementById('qrcode');
+
+  qrBox.innerHTML = '';
+
+  new QRCode(qrBox, {
+
+    text:String(student.id),
+
+    width:180,
+    height:180,
+
+    colorDark:'#12345B',
+    colorLight:'#FFFFFF',
+
+    correctLevel:QRCode.CorrectLevel.H
+
+  });
+
+
+  document.getElementById(
+    'qrLabel'
+  ).textContent =
+    `${student.name} — ID ${student.id}`;
+
+}
+
+
+/* =========================
+   DOWNLOAD QR
+========================= */
+
+document
+  .getElementById('downloadQr')
+  .addEventListener(
+    'click',
+    () => {
+
+      const canvas =
+        document.querySelector(
+          '#qrcode canvas'
+        );
+
+      const image =
+        document.querySelector(
+          '#qrcode img'
+        );
+
+      let dataUrl = '';
+
+      if(canvas){
+
+        dataUrl =
+          canvas.toDataURL('image/png');
+
+      }else if(image){
+
+        dataUrl =
+          image.src;
+
+      }
+
+      if(!dataUrl){
+
+        alert('QR belum tersedia.');
+        return;
+
+      }
+
+      const link =
+        document.createElement('a');
+
+      link.href = dataUrl;
+
+      link.download =
+        'QR_Siswa.png';
+
+      link.click();
+
+    }
+  );
+
+
+/* =========================
+   PILIH QR SISWA
+========================= */
+
+document
+  .getElementById('qrStudentSelect')
+  .addEventListener(
+    'change',
+    e => {
+
+      generateQr(
+        e.target.value
+      );
+
+    }
+  );
+
+
+/* =========================
+   QR SCANNER KAMERA HP
+========================= */
+
+document
+  .getElementById('startScanner')
+  .addEventListener(
+    'click',
+    async () => {
+
+      const box =
+        document.getElementById('scannerBox');
+
+      box.style.display = 'block';
+
+      if(scannerRunning) return;
+
+      html5QrCode =
+        new Html5Qrcode('reader');
+
+      try{
+
+        await html5QrCode.start(
+
+          {
+            facingMode:'environment'
+          },
+
+          {
+            fps:10,
+            qrbox:{
+              width:220,
+              height:220
+            }
+          },
+
+          decodedText => {
+
+            const now =
+              Date.now();
+
+            /*
+              Mencegah QR yang sama
+              terbaca berkali-kali
+              dalam waktu singkat.
+            */
+
+            if(
+              decodedText === lastScannedId &&
+              now - lastScanTime < 3000
+            ){
+
+              return;
+
+            }
+
+            lastScannedId =
+              decodedText;
+
+            lastScanTime =
+              now;
+
+            recordTap(decodedText);
+
+          },
+
+          errorMessage => {
+            // Error pembacaan diabaikan
+          }
+
+        );
+
+        scannerRunning = true;
+
+      }catch(error){
+
+        document.getElementById(
+          'reader'
+        ).innerHTML = `
+
+          <div style="
+            padding:15px;
+            background:#FFEBEE;
+            color:#D32F2F;
+            border-radius:8px;
+            font-size:13px;
+          ">
+
+            Kamera tidak dapat dibuka.
+            Pastikan izin kamera diberikan
+            dan halaman menggunakan HTTPS.
+
+          </div>
+
+        `;
+
+        console.error(error);
+
+      }
+
+    }
+  );
+
+
+/* =========================
+   TUTUP SCANNER
+========================= */
+
+document
+  .getElementById('stopScanner')
+  .addEventListener(
+    'click',
+    async () => {
+
+      if(
+        html5QrCode &&
+        scannerRunning
+      ){
+
+        await html5QrCode.stop();
+
+        html5QrCode.clear();
+
+        scannerRunning = false;
+
+      }
+
+      document.getElementById(
+        'scannerBox'
+      ).style.display = 'none';
+
+    }
+  );
+
+
+/* =========================
+   ROSTER PANEL
+========================= */
+
+function renderRosterPanel(){
+
+  const rows =
+    document.getElementById('rosterRows');
+
+  rows.innerHTML =
+    roster.map(
+      (s,i) => `
+
+        <div
+          class="roster-row"
+          data-idx="${i}"
+        >
+
+          <input
+            class="id-field"
+            value="${escapeAttribute(s.id)}"
+            placeholder="ID"
+          >
+
+          <input
+            class="name-field"
+            value="${escapeAttribute(s.name)}"
+            placeholder="Nama"
+          >
+
+          <input
+            class="in-field"
+            value="${escapeAttribute(s.in || '')}"
+            placeholder="07:00"
+          >
+
+          <input
+            class="photo-field"
+            value="${escapeAttribute(s.photo || '')}"
+            placeholder="foto.jpeg"
+          >
+
+          <button
+            class="remove-row"
+            title="Hapus siswa"
+          >
+            ×
+          </button>
+
+        </div>
+
+      `
+    ).join('');
+
+
+  rows
+    .querySelectorAll('.roster-row')
+    .forEach(
+      row => {
+
+        const idx =
+          Number(row.dataset.idx);
+
+
+        row
+          .querySelector('.id-field')
+          .addEventListener(
+            'change',
+            e => {
+
+              roster[idx].id =
+                e.target.value.trim();
+
+              saveRoster();
+              renderManualList();
+              renderQrSelect();
+
+            }
+          );
+
+
+        row
+          .querySelector('.name-field')
+          .addEventListener(
+            'change',
+            e => {
+
+              roster[idx].name =
+                e.target.value.trim();
+
+              saveRoster();
+              renderManualList();
+              renderQrSelect();
+
+            }
+          );
+
+
+        row
+          .querySelector('.in-field')
+          .addEventListener(
+            'change',
+            e => {
+
+              roster[idx].in =
+                e.target.value.trim();
+
+              saveRoster();
+
+            }
+          );
+
+
+        row
+          .querySelector('.photo-field')
+          .addEventListener(
+            'change',
+            e => {
+
+              roster[idx].photo =
+                e.target.value.trim();
+
+              saveRoster();
+
+            }
+          );
+
+
+        row
+          .querySelector('.remove-row')
+          .addEventListener(
+            'click',
+            () => {
+
+              if(
+                confirm(
+                  'Hapus siswa ini dari data roster?'
+                )
+              ){
+
+                roster.splice(idx,1);
+
+                saveRoster();
+                renderRosterPanel();
+                renderManualList();
+                renderQrSelect();
+
+              }
+
+            }
+          );
+
+      }
+    );
+
+}
+
+
+/* =========================
+   TAMBAH SISWA
+========================= */
+
+document
+  .getElementById('addRosterRow')
+  .addEventListener(
+    'click',
+    () => {
+
+      const newId =
+        String(
+          1000 +
+          roster.length +
+          1
+        );
+
+      roster.push({
+
+        id:newId,
+
+        name:'Siswa Baru',
+
+        photo:'siswa-baru.jpeg',
+
+        in:'07:00',
+
+        class:'XI RPL',
+
+        major:'RPL'
+
+      });
+
+      saveRoster();
+      renderRosterPanel();
+      renderManualList();
+      renderQrSelect();
+
+    }
+  );
+
+
+/* =========================
+   INPUT SCAN MANUAL
+========================= */
+
+document
+  .getElementById('scanInput')
+  .addEventListener(
+    'keydown',
+    e => {
+
+      if(e.key === 'Enter'){
+
+        const value =
+          e.target.value.trim();
+
+        if(value){
+
+          recordTap(value);
+
+          e.target.value = '';
+
+        }
+
+      }
+
+    }
+  );
+
+
+/* =========================
+   TOGGLE MANUAL
+========================= */
+
+document
+  .getElementById('toggleManual')
+  .addEventListener(
+    'click',
+    () => {
+
+      const list =
+        document.getElementById('manualList');
+
+      list.style.display =
+        list.style.display === 'none'
+          ? 'grid'
+          : 'none';
+
+    }
+  );
+
+
+/* =========================
+   TOGGLE ROSTER
+========================= */
+
+document
+  .getElementById('toggleRoster')
+  .addEventListener(
+    'click',
+    () => {
+
+      const panel =
+        document.getElementById('rosterPanel');
+
+      panel.style.display =
+        panel.style.display === 'none'
+          ? 'block'
+          : 'none';
+
+    }
+  );
+
+
+/* =========================
+   FILTER TANGGAL
+========================= */
+
+document
+  .getElementById('dateFilter')
+  .addEventListener(
+    'change',
+    e => {
+
+      currentDate =
+        e.target.value ||
+        todayStr();
+
+      loadAttendance(
+        currentDate
+      );
+
+    }
+  );
+
+
+/* =========================
+   EXPORT CSV
+========================= */
+
+document
+  .getElementById('exportCsv')
+  .addEventListener(
+    'click',
+    () => {
+
+      const rows = [
+
+        [
+          'Tanggal',
+          'Waktu',
+          'ID',
+          'Nama',
+          'Status'
+        ]
+
+      ];
+
+
+      attendance.forEach(
+        a => {
+
+          rows.push([
+
+            currentDate,
+            a.time,
+            a.id,
+            a.name,
+            a.status
+
+          ]);
+
+        }
+      );
+
+
+      const csv =
+        rows
+          .map(
+            r =>
+              r.map(
+                v =>
+                  `"${String(v).replace(/"/g,'""')}"`
+              ).join(',')
+          )
+          .join('\n');
+
+
+      const blob =
+        new Blob(
+          [csv],
+          {
+            type:'text/csv;charset=utf-8;'
+          }
+        );
+
+
+      const url =
+        URL.createObjectURL(blob);
+
+      const a =
+        document.createElement('a');
+
+      a.href = url;
+
+      a.download =
+        `absensi_${currentDate}.csv`;
+
+      a.click();
+
+      URL.revokeObjectURL(url);
+
+    }
+  );
+
+
+/* =========================
+   JAM DIGITAL
+========================= */
+
+function tickClock(){
+
+  const now = new Date();
+
+  document.getElementById(
+    'clockTime'
+  ).textContent =
+    now.toTimeString().slice(0,8);
+
+  document.getElementById(
+    'clockDate'
+  ).textContent =
+    now.toLocaleDateString(
+      'id-ID',
+      {
+        weekday:'long',
+        year:'numeric',
+        month:'long',
+        day:'numeric'
+      }
+    );
+
+}
+
+setInterval(
+  tickClock,
+  1000
+);
+
+tickClock();
+
+
+/* =========================
+   MODAL QR
+========================= */
+
+function openQrModal(student){
+
+  const modal =
+    document.getElementById('qrModal');
+
+  const qr =
+    document.getElementById('modalQr');
+
+  qr.innerHTML = '';
+
+  document.getElementById(
+    'modalStudentName'
+  ).textContent =
+    student.name;
+
+  document.getElementById(
+    'modalStudentId'
+  ).textContent =
+    'ID: ' + student.id;
+
+  new QRCode(qr, {
+
+    text:String(student.id),
+
+    width:220,
+    height:220,
+
+    colorDark:'#12345B',
+    colorLight:'#FFFFFF',
+
+    correctLevel:QRCode.CorrectLevel.H
+
+  });
+
+  modal.style.display = 'flex';
+
+}
+
+
+document
+  .getElementById('closeModal')
+  .addEventListener(
+    'click',
+    () => {
+
+      document.getElementById(
+        'qrModal'
+      ).style.display = 'none';
+
+    }
+  );
+
+
+document
+  .getElementById('qrModal')
+  .addEventListener(
+    'click',
+    e => {
+
+      if(
+        e.target.id === 'qrModal'
+      ){
+
+        e.currentTarget.style.display = 'none';
+
+      }
+
+    }
+  );
+
+
+/* =========================
+   KEAMANAN TEKS
+========================= */
+
+function escapeHtml(value){
+
+  return String(value)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
+
+}
+
+function escapeAttribute(value){
+
+  return escapeHtml(value);
+
+}
+
+
+/* =========================
+   INIT
+========================= */
+
+(function init(){
+
+  document.getElementById(
+    'dateFilter'
+  ).value = currentDate;
+
+  loadRoster();
+
+  loadAttendance(
+    currentDate
+  );
+
+  document.getElementById(
+    'scanInput'
+  ).focus();
+
+})();
+
+</script>
+
+</body>
+</html>
